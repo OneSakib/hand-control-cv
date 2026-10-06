@@ -1,28 +1,3 @@
-"""
-Hand Gesture Image Controller
-=============================
-Zoom and pan an image using only your hand, via webcam.
-
-Install:
-    pip install opencv-python mediapipe numpy
-
-Run:
-    python hand_control.py                    # uses a generated demo image
-    python hand_control.py path/to/image.jpg  # uses your own image
-    python hand_control.py image.jpg --cam 1  # pick another camera
-
-Gestures:
-    TWO HANDS            -> move index fingertips apart / together to zoom in / out
-    ONE HAND, "L" shape  -> index finger up, other 3 fingers folded.
-                            Spread thumb <-> index to zoom in, close them to zoom out
-    ONE HAND, "OK" sign  -> thumb + index touching, other 3 fingers up.
-                            Move your hand to drag (pan) the image
-    FIST (hold 1.5 s)    -> reset zoom and position
-
-Keys:
-    r = reset    q / ESC = quit
-"""
-
 import argparse
 import math
 import sys
@@ -35,11 +10,11 @@ import numpy as np
 # --------------------------------------------------------------------------
 # Settings
 # --------------------------------------------------------------------------
-DISPLAY_W, DISPLAY_H = 1000, 700      # size of the main image window
+DISPLAY_W, DISPLAY_H = 1000, 700  # size of the main image window
 MIN_ZOOM, MAX_ZOOM = 1.0, 6.0
-SMOOTHING = 0.25                      # 0..1, higher = snappier, lower = smoother
-PINCH_THRESHOLD = 0.30                # thumb-index / palm size ratio for "touching"
-L_SHAPE_RANGE = (0.35, 1.70)          # ratio range mapped to MIN_ZOOM..MAX_ZOOM
+SMOOTHING = 0.25  # 0..1, higher = snappier, lower = smoother
+PINCH_THRESHOLD = 0.30  # thumb-index / palm size ratio for "touching"
+L_SHAPE_RANGE = (0.35, 1.70)  # ratio range mapped to MIN_ZOOM..MAX_ZOOM
 FIST_HOLD_SECONDS = 1.5
 
 mp_hands = mp.solutions.hands
@@ -64,8 +39,16 @@ def make_demo_image(w=1600, h=1000):
         c = tuple(int(v) for v in rng.integers(40, 255, 3))
         p = (int(rng.integers(0, w)), int(rng.integers(0, h)))
         cv2.circle(img, p, int(rng.integers(20, 90)), c, -1)
-    cv2.putText(img, "HAND CONTROL DEMO", (330, 520),
-                cv2.FONT_HERSHEY_DUPLEX, 3, (255, 255, 255), 6, cv2.LINE_AA)
+    cv2.putText(
+        img,
+        "HAND CONTROL DEMO",
+        (330, 520),
+        cv2.FONT_HERSHEY_DUPLEX,
+        3,
+        (255, 255, 255),
+        6,
+        cv2.LINE_AA,
+    )
     return img
 
 
@@ -105,17 +88,33 @@ def render_view(img, zoom, cx, cy):
     view_w, view_h = w / zoom, h / zoom
     x0 = np.clip(cx * w - view_w / 2, 0, w - view_w)
     y0 = np.clip(cy * h - view_h / 2, 0, h - view_h)
-    crop = img[int(y0):int(y0 + view_h), int(x0):int(x0 + view_w)]
+    crop = img[int(y0) : int(y0 + view_h), int(x0) : int(x0 + view_w)]
     return cv2.resize(crop, (DISPLAY_W, DISPLAY_H), interpolation=cv2.INTER_LINEAR)
 
 
 def draw_hud(canvas, mode, zoom):
     cv2.rectangle(canvas, (0, 0), (DISPLAY_W, 50), (0, 0, 0), -1)
-    cv2.putText(canvas, f"Mode: {mode}   Zoom: {zoom:.2f}x", (15, 34),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2, cv2.LINE_AA)
+    cv2.putText(
+        canvas,
+        f"Mode: {mode}   Zoom: {zoom:.2f}x",
+        (15, 34),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.9,
+        (0, 255, 0),
+        2,
+        cv2.LINE_AA,
+    )
     help_text = "2 hands: zoom | L-shape: zoom | OK sign: pan | fist: reset | q: quit"
-    cv2.putText(canvas, help_text, (15, DISPLAY_H - 15),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 1, cv2.LINE_AA)
+    cv2.putText(
+        canvas,
+        help_text,
+        (15, DISPLAY_H - 15),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.55,
+        (255, 255, 255),
+        1,
+        cv2.LINE_AA,
+    )
 
 
 # --------------------------------------------------------------------------
@@ -141,9 +140,9 @@ def main():
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 540)
 
     # View state
-    zoom = 1.0          # smoothed zoom actually shown
-    target_zoom = 1.0   # zoom we are moving toward
-    cx, cy = 0.5, 0.5   # view center in normalized image coords
+    zoom = 1.0  # smoothed zoom actually shown
+    target_zoom = 1.0  # zoom we are moving toward
+    cx, cy = 0.5, 0.5  # view center in normalized image coords
 
     # Gesture state
     two_hand_start_dist = None
@@ -246,8 +245,10 @@ def main():
             for hl in hand_list:
                 mp_draw.draw_landmarks(frame, hl, mp_hands.HAND_CONNECTIONS)
             pip = cv2.resize(frame, (280, 158))
-            canvas[DISPLAY_H - 158 - 40:DISPLAY_H - 40,
-                   DISPLAY_W - 280 - 10:DISPLAY_W - 10] = pip
+            canvas[
+                DISPLAY_H - 158 - 40 : DISPLAY_H - 40,
+                DISPLAY_W - 280 - 10 : DISPLAY_W - 10,
+            ] = pip
 
             cv2.imshow("Hand Control", canvas)
             key = cv2.waitKey(1) & 0xFF
